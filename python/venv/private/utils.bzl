@@ -86,3 +86,25 @@ venv_entrypoint = rule(
     ],
     executable = True,
 )
+
+def create_python_startup_args(*, ctx, version_info):
+    """Construct an Args object for running python scripts.
+
+    A python script can be added to the resulting Args object to spawn
+    a process for it.
+
+    Args:
+        ctx (ctx): The rule's context object.
+        version_info (struct): Python version info from `py_toolchain`.
+
+    Returns:
+        Args: An args object.
+    """
+    python_args = ctx.actions.args()
+    python_args.add("-B")  # don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x
+    python_args.add("-s")  # don't add user site directory to sys.path; also PYTHONNOUSERSITE
+
+    if (version_info.major >= 3 and version_info.minor >= 11) or version_info.major > 3:
+        python_args.add("-P")  # safe paths (available in Python 3.11)
+
+    return python_args

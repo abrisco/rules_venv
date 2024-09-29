@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_python//python:defs.bzl", "PyInfo")
+load(":utils.bzl", "create_python_startup_args")
 
 _TOOLCHAIN_TYPE = str(Label("//python/venv:toolchain_type"))
 
@@ -132,28 +133,6 @@ def _rlocationpath(file, workspace_name):
 def _path(file, _workspace_name):
     return file.path
 
-def _create_python_startup_args(*, ctx, version_info):
-    """Construct an Args object for running python scripts.
-
-    A python script can be added to the resulting Args object to spawn
-    a process for it.
-
-    Args:
-        ctx (ctx): The rule's context object.
-        version_info (struct): Python version info from `py_toolchain`.
-
-    Returns:
-        Args: An args object.
-    """
-    python_args = ctx.actions.args()
-    python_args.add("-B")  # don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x
-    python_args.add("-s")  # don't add user site directory to sys.path; also PYTHONNOUSERSITE
-
-    if (version_info.major >= 3 and version_info.minor >= 11) or version_info.major > 3:
-        python_args.add("-P")  # safe paths (available in Python 3.11)
-
-    return python_args
-
 def _create_runfiles_collection(*, ctx, venv_toolchain, py_toolchain, runfiles, name = None):
     """Generate a runfiles directory
 
@@ -184,7 +163,7 @@ def _create_runfiles_collection(*, ctx, venv_toolchain, py_toolchain, runfiles, 
 
     output = ctx.actions.declare_file("{}.venv_runfiles.zip".format(name))
 
-    python_args = _create_python_startup_args(ctx = ctx, version_info = py_runtime.interpreter_version_info)
+    python_args = create_python_startup_args(ctx = ctx, version_info = py_runtime.interpreter_version_info)
 
     python_args.add(venv_toolchain.runfiles_maker)
 
@@ -415,7 +394,7 @@ def _create_python_zip_file(
 
     python_zip_file = ctx.actions.declare_file("{}.pyz".format(name))
 
-    python_args = _create_python_startup_args(ctx = ctx, version_info = py_runtime.interpreter_version_info)
+    python_args = create_python_startup_args(ctx = ctx, version_info = py_runtime.interpreter_version_info)
     python_args.add(venv_toolchain.zipapp_maker)
     args = ctx.actions.args()
     args.add("--zipapp_main_template", venv_toolchain.zipapp_main)
