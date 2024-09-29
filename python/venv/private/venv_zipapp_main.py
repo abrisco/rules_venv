@@ -59,6 +59,7 @@ def main() -> None:
         runfiles_dir.mkdir(exist_ok=True, parents=True)
         logging.debug("Extracting runfiles to: %s", runfiles_dir)
         extract_zip(zip_file=Path(__file__).parent, output_dir=runfiles_dir)
+        os.environ["PY_VENV_RUNFILES_DIR"] = str(runfiles_dir)
         os.environ["RUNFILES_DIR"] = str(runfiles_dir)
 
         args = [

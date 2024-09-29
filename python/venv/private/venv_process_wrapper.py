@@ -216,9 +216,14 @@ def main() -> None:
         # Subprocess the entrypoint via the new venv.
         main_args: List[str] = [
             str(venv_interpreter),
-            "-B",  # don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x
             "-s",  # don't add user site directory to sys.path; also PYTHONNOUSERSITE
         ]
+
+        # Normally writing `.pyc` files is avoided but if the venv is using
+        # extracted runfiles this behavior is safe
+        if "PY_VENV_RUNFILES_DIR" not in os.environ:
+            main_args.append("-B")  # don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x
+
         if (
             sys.version_info.major >= 3 and sys.version_info.minor >= 11
         ) or sys.version_info.major > 3:
