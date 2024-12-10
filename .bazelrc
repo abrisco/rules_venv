@@ -37,8 +37,8 @@ build --incompatible_default_to_explicit_init_py
 ## Bzlmod
 ###############################################################################
 
-# TODO: migrate all dependencies from WORKSPACE to MODULE.bazel
-common --noenable_bzlmod
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
 
 # Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
 common --lockfile_mode=off
