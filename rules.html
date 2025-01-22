@@ -171,6 +171,7 @@
 <li><a href="#py_venv_common.create_py_info">py_venv_common.create_py_info</a></li>
 <li><a href="#py_venv_common.create_runfiles_collection">py_venv_common.create_runfiles_collection</a></li>
 <li><a href="#py_venv_common.create_venv_attrs">py_venv_common.create_venv_attrs</a></li>
+<li><a href="#py_venv_common.create_venv_config_info">py_venv_common.create_venv_config_info</a></li>
 <li><a href="#py_venv_common.create_venv_entrypoint">py_venv_common.create_venv_entrypoint</a></li>
 <li><a href="#py_venv_common.get_toolchain">py_venv_common.get_toolchain</a></li>
 </ul>
@@ -356,6 +357,23 @@ load("@rules_venv//python/venv:defs.bzl", "py_venv_common")
 
 py_venv_common.create_venv_attrs()
 </pre>
+<p><a id="py_venv_common.create_venv_config_info"></a></p>
+<h2 id="py_venv_commoncreate_venv_config_info"><a class="header" href="#py_venv_commoncreate_venv_config_info">py_venv_common.create_venv_config_info</a></h2>
+<pre>
+load("@rules_venv//python/venv:defs.bzl", "py_venv_common")
+
+py_venv_common.create_venv_config_info(*, <a href="#py_venv_common.create_venv_config_info-label">label</a>, <a href="#py_venv_common.create_venv_config_info-name">name</a>, <a href="#py_venv_common.create_venv_config_info-imports">imports</a>)
+</pre>
+<p>Construct info used to create venvs.</p>
+<p><strong>PARAMETERS</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">Name</th><th style="text-align: left">Description</th><th style="text-align: left">Default Value</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a id="py_venv_common.create_venv_config_info-label"></a>label</td><td style="text-align: left">The label of the target that owns the venv.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="py_venv_common.create_venv_config_info-name"></a>name</td><td style="text-align: left">The name for the venv.</td><td style="text-align: left">none</td></tr>
+<tr><td style="text-align: left"><a id="py_venv_common.create_venv_config_info-imports"></a>imports</td><td style="text-align: left">A list of import paths to write to <code>.pth</code> files.</td><td style="text-align: left">none</td></tr>
+</tbody></table>
+</div>
+<p><strong>RETURNS</strong></p>
+<p>struct: the data.</p>
 <p><a id="py_venv_common.create_venv_entrypoint"></a></p>
 <h2 id="py_venv_commoncreate_venv_entrypoint"><a class="header" href="#py_venv_commoncreate_venv_entrypoint">py_venv_common.create_venv_entrypoint</a></h2>
 <pre>
