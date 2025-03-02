@@ -3,6 +3,7 @@
 numpy
 pytest
 pytest-cov
+twine
 
 # linters
 pylint

@@ -1,4 +1,4 @@
-"""Bazel rules for Python."""
+"""# Venv"""
 
 load(
     "//python/venv/private:venv.bzl",

@@ -120,7 +120,7 @@ jobs:
           python -m pip install --upgrade pip setuptools
       - name: Install dependencies
         run: |
-          pip install -r python/venv/private/tests/external_deps/requirements_linux.txt --user
+          pip install -r python/venv/3rdparty/requirements_linux.txt --user
       - name: Run mypy
         run: |
           python -m mypy python
