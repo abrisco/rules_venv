@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import Generator, List, Optional, Sequence
 
-from python.runfiles import Runfiles  # type: ignore
+from python.runfiles import Runfiles
 
 # isort gets confused seeing itself in a file, explicitly skip sorting this
 # isort: off
