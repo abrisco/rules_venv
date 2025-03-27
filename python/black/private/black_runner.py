@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Generator, Optional, Sequence
 
 import black
-from python.runfiles import Runfiles  # type: ignore
+from python.runfiles import Runfiles
 
 
 def _no_realpath(path, **_kwargs):  # type: ignore
