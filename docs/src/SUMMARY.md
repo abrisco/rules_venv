@@ -8,4 +8,5 @@
     - [black](./black.md)
     - [global_venv](./global_venv.md)
     - [isort](./isort.md)
+    - [pylint](./pylint.md)
     - [wheel](./wheel.md)
