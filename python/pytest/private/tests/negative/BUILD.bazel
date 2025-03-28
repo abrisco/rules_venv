@@ -1,0 +1,32 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("//python/pytest:defs.bzl", "py_pytest_test", "py_pytest_test_suite")
+
+py_pytest_test(
+    name = "test_tags_test",
+    srcs = ["pytest_negative_test.py"],
+    tags = ["manual"],
+)
+
+py_pytest_test(
+    name = "test_compatibility_test",
+    srcs = ["pytest_negative_test.py"],
+    target_compatible_with = ["@platforms//:incompatible"],
+)
+
+py_pytest_test_suite(
+    name = "test_suite_tags_test",
+    tags = ["manual"],
+    tests = ["pytest_negative_test.py"],
+)
+
+copy_file(
+    name = "compat_copy",
+    src = "pytest_negative_test.py",
+    out = "pytest_compat_test.py",
+)
+
+py_pytest_test_suite(
+    name = "test_suite_compatibility_test",
+    target_compatible_with = ["@platforms//:incompatible"],
+    tests = ["pytest_compat_test.py"],
+)
