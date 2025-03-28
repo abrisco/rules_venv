@@ -36,7 +36,9 @@ click==8.1.8 \
     # https://files.pythonhosted.org/packages/7e/d4/7ebdbd03970677812aac39c869717059dbb71a4cfc033ca6e5221787892c/click-8.1.8-py3-none-any.whl#sha256=63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2
 coverage==7.7.1 \
     --hash=sha256:44af11c00fd3b19b8809487630f8a0039130d32363239dfd15238e6d37e41a48
-    # via pytest-cov (>=7.5 [toml])
+    # via
+    #   _main/python/3rdparty/requirements.in (>=7.6)
+    #   pytest-cov (>=7.5 [toml])
     # https://files.pythonhosted.org/packages/e8/6c/0e9aac4cf5dba49feede79109fdfd2fafca3bdbc02992bcf9b25d58351dd/coverage-7.7.1-cp311-cp311-macosx_11_0_arm64.whl#sha256=44af11c00fd3b19b8809487630f8a0039130d32363239dfd15238e6d37e41a48
 dill==0.3.9 \
     --hash=sha256:468dff3b89520b474c0397703366b7b95eebe6303f108adf9b19da1f702be87a
@@ -46,6 +48,10 @@ docutils==0.21.2 \
     --hash=sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2
     # via readme_renderer (>=0.21.2)
     # https://files.pythonhosted.org/packages/8f/d7/9322c609343d929e75e7e5e6255e614fcc67572cfd083959cdef3b7aad79/docutils-0.21.2-py3-none-any.whl#sha256=dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2
+execnet==2.1.1 \
+    --hash=sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc
+    # via pytest-xdist (>=2.1)
+    # https://files.pythonhosted.org/packages/43/09/2aea36ff60d16dd8879bdb2f5b3ee0ba8d08cbbdcdfe870e695ce3784385/execnet-2.1.1-py3-none-any.whl#sha256=26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc
 id==1.5.0 \
     --hash=sha256:f1434e1cef91f2cbb8a4ec64663d5a23b9ed43ef44c4c957d02583d61714c658
     # via twine
@@ -154,13 +160,18 @@ pylint==3.3.6 \
 pytest==8.3.5 \
     --hash=sha256:c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820
     # via
-    #   _main/python/3rdparty/requirements.in
+    #   _main/python/3rdparty/requirements.in (>=7.0.1)
     #   pytest-cov (>=4.6)
+    #   pytest-xdist (>=7.0.0)
     # https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl#sha256=c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820
 pytest-cov==6.0.0 \
     --hash=sha256:eee6f1b9e61008bd34975a4d5bab25801eb31898b032dd55addc93e96fcaaa35
     # via _main/python/3rdparty/requirements.in
     # https://files.pythonhosted.org/packages/36/3b/48e79f2cd6a61dbbd4807b4ed46cb564b4fd50a76166b1c4ea5c1d9e2371/pytest_cov-6.0.0-py3-none-any.whl#sha256=eee6f1b9e61008bd34975a4d5bab25801eb31898b032dd55addc93e96fcaaa35
+pytest-xdist==3.6.1 \
+    --hash=sha256:9ed4adfb68a016610848639bb7e02c9352d5d9f03d04809919e2dafc3be4cca7
+    # via _main/python/3rdparty/requirements.in
+    # https://files.pythonhosted.org/packages/6d/82/1d96bf03ee4c0fdc3c0cbe61470070e659ca78dc0086fb88b66c185e2449/pytest_xdist-3.6.1-py3-none-any.whl#sha256=9ed4adfb68a016610848639bb7e02c9352d5d9f03d04809919e2dafc3be4cca7
 readme_renderer==44.0 \
     --hash=sha256:2fbca89b81a08526aadf1357a8c2ae889ec05fb03f5da67f9769c9a592166151
     # via twine (>=35.0)
