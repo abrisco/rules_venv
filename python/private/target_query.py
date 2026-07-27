@@ -108,11 +108,11 @@ def query_python_targets(
 ) -> list[TargetInfo]:
     """Return every PyInfo-like target under `scope` with its resolved file set.
 
-    A target counts as "Python-like" if the resolver walks at least one
-    `.py` source file starting from its `srcs` or `main`. This is a
-    loading-phase proxy for the `PyInfo` provider — we cannot ask
-    `bazel query` about providers, and `cquery`/aspects would drop
-    incompatible targets.
+    A target is included when its rule kind starts with `py_` AND the
+    resolver walks at least one `.py` source file starting from its `srcs`
+    or `main`. This is a loading-phase proxy for the `PyInfo` provider —
+    we cannot ask `bazel query` about providers, and `cquery`/aspects
+    would drop incompatible targets.
 
     `ignore_tags` values are normalized (`.replace("-","_").lower()`) so
     callers only need to list one spelling of each tag; matching against
@@ -136,24 +136,28 @@ def _fetch_roots(
 ) -> tuple[list[str], list[_Entity]]:
     """Round 1: fetch scope roots + their attributes; split rules vs scope-level `.py`.
 
-    Wildcards in `scope` are handled by Bazel here — no need to
-    enumerate labels first. Tag filtering runs in Python against the
-    streamed attribute data, not as an `attr(tags, ...)` regex, so
-    there is no escaping/case foot-gun.
+    Wildcards in `scope` are handled by Bazel here — no need to enumerate
+    labels first. The `kind("py_.*", …)` gate is our loading-phase proxy
+    for the `PyInfo` provider (we can't ask query about providers, and
+    `cquery`/aspects would drop incompatible targets). The `filter` clause
+    keeps `//pkg:foo.py` explicit scopes working. Tag filtering runs in
+    Python against the streamed attribute data, not as an `attr(tags, …)`
+    regex, so there is no escaping/case foot-gun.
     """
-    roots_query = f"set({' '.join(scope)})"
+    scope_str = " ".join(scope)
+    roots_query = (
+        f'kind("py_.*", set({scope_str}))'
+        f' union filter("\\.py$", kind("source file", set({scope_str})))'
+    )
     root_labels: list[str] = []
     scope_source_files: list[_Entity] = []
     for entity in _stream_query(bazel, workspace_dir, roots_query):
         entities[entity.label] = entity
         if entity.kind == _SOURCE_FILE_KIND:
-            # Only source files named directly in `scope` need to be
-            # surfaced here — source files reached via BFS are already
-            # attached to the parent rule they were pulled in through.
-            if entity.label.startswith("//") and _label_to_path(entity.label).endswith(
-                ".py"
-            ):
-                scope_source_files.append(entity)
+            # Source files reached via BFS are already attached to the
+            # parent rule that pulled them in; this branch only fires for
+            # `//pkg:foo.py` labels named directly in scope.
+            scope_source_files.append(entity)
         else:
             root_labels.append(entity.label)
 
