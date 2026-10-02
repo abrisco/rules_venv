@@ -1,7 +1,9 @@
 """Bazel rules for Python venvs"""
 
+load("//python:py_cc_link_params_info.bzl", "PyCcLinkParamsInfo")
 load("//python:py_executable_info.bzl", "PyExecutableInfo")
 load("//python:py_info.bzl", "PyInfo")
+load("//python:py_runtime_info.bzl", "PyRuntimeInfo")
 load("//python/private:coverage.bzl", "COVERAGE_ATTRS")
 load(":venv_common.bzl", venv_common = "py_venv_common")
 
@@ -40,17 +42,21 @@ def _py_venv_library_impl(ctx):
         ],
     )
 
+    py_info = venv_common.create_py_info(
+        ctx = ctx,
+        imports = ctx.attr.imports,
+        srcs = ctx.files.srcs,
+        dep_info = dep_info,
+    )
+
     return [
         DefaultInfo(
             files = depset(ctx.files.srcs),
             runfiles = runfiles,
         ),
-        venv_common.create_py_info(
-            ctx = ctx,
-            imports = ctx.attr.imports,
-            srcs = ctx.files.srcs,
-            dep_info = dep_info,
-        ),
+        py_info,
+        venv_common.create_py_cc_link_params_info(deps = ctx.attr.deps),
+        venv_common.create_output_group_info(py_info = py_info),
         coverage_common.instrumented_files_info(
             ctx,
             dependency_attributes = ["deps"],
@@ -65,7 +71,7 @@ A library of Python code that can be depended upon.
 """,
     implementation = _py_venv_library_impl,
     attrs = _COMMON_ATTRS,
-    provides = [PyInfo],
+    provides = [PyInfo, PyCcLinkParamsInfo],
 )
 
 def _create_run_environment_info(ctx, env, env_inherit, targets):
@@ -205,6 +211,9 @@ def _py_venv_binary_impl(ctx):
         ),
         py_info,
         py_executable_info,
+        venv_toolchain.py_toolchain.py3_runtime,
+        venv_common.create_py_cc_link_params_info(deps = ctx.attr.deps),
+        venv_common.create_output_group_info(py_info = py_info),
         coverage_common.instrumented_files_info(
             ctx,
             dependency_attributes = ["deps"],
@@ -256,7 +265,7 @@ py_venv_binary(
 """,
     implementation = _py_venv_binary_impl,
     attrs = _EXECUTABLE_ATTRS,
-    provides = [PyInfo, PyExecutableInfo],
+    provides = [PyInfo, PyExecutableInfo, PyCcLinkParamsInfo, PyRuntimeInfo],
     toolchains = [venv_common.TOOLCHAIN_TYPE],
     executable = True,
 )
@@ -325,6 +334,9 @@ def _py_venv_test_impl(ctx):
         ),
         py_info,
         py_executable_info,
+        py_toolchain.py3_runtime,
+        venv_common.create_py_cc_link_params_info(deps = ctx.attr.deps),
+        venv_common.create_output_group_info(py_info = py_info),
         coverage_common.instrumented_files_info(
             ctx,
             dependency_attributes = ["deps"],
@@ -349,7 +361,7 @@ A `py_venv_test` rule compiles a test. A test is a binary wrapper around some te
             doc = "Specifies additional environment variables to inherit from the external environment when the test is executed by `bazel test`.",
         ),
     },
-    provides = [PyInfo, PyExecutableInfo],
+    provides = [PyInfo, PyExecutableInfo, PyCcLinkParamsInfo, PyRuntimeInfo],
     toolchains = [venv_common.TOOLCHAIN_TYPE],
     test = True,
 )

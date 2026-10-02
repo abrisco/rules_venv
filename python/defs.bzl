@@ -9,10 +9,6 @@ load(
     _py_runtime = "py_runtime",
 )
 load(
-    "@rules_python//python:py_runtime_info.bzl",
-    _PyRuntimeInfo = "PyRuntimeInfo",
-)
-load(
     "//python/venv:py_venv_binary.bzl",
     "py_venv_binary",
 )
@@ -31,6 +27,10 @@ load(
 load(
     ":py_info.bzl",
     _PyInfo = "PyInfo",
+)
+load(
+    ":py_runtime_info.bzl",
+    _PyRuntimeInfo = "PyRuntimeInfo",
 )
 
 py_binary = py_venv_binary

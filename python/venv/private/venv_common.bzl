@@ -1,6 +1,9 @@
 """Interfaces for rule authors to use in custom rules"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("//python:py_cc_link_params_info.bzl", "PyCcLinkParamsInfo")
 load("//python:py_executable_info.bzl", "PyExecutableInfo")
 load("//python:py_info.bzl", "PyInfo")
 
@@ -101,6 +104,41 @@ def _create_py_info(*, ctx, imports, srcs, dep_info = None):
             transitive = [dep_info.transitive_sources],
             order = "postorder",
         ),
+    )
+
+def _create_py_cc_link_params_info(*, deps):
+    """Construct a `PyCcLinkParamsInfo` provider matching the one `rules_python` rules return.
+
+    Linking information from any `CcInfo` or `PyCcLinkParamsInfo` in `deps` is merged so
+    it reaches whatever ultimately links the Python program.
+
+    Args:
+        deps (list): A list of python dependency targets.
+
+    Returns:
+        PyCcLinkParamsInfo: The provider.
+    """
+    cc_infos = []
+    for dep in deps:
+        if CcInfo in dep:
+            cc_infos.append(dep[CcInfo])
+        if PyCcLinkParamsInfo in dep:
+            cc_infos.append(dep[PyCcLinkParamsInfo].cc_info)
+
+    return PyCcLinkParamsInfo(cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos))
+
+def _create_output_group_info(*, py_info):
+    """Construct an `OutputGroupInfo` provider matching the one `rules_python` rules return.
+
+    Args:
+        py_info (PyInfo): The `PyInfo` provider for the current target.
+
+    Returns:
+        OutputGroupInfo: The provider.
+    """
+    return OutputGroupInfo(
+        compilation_prerequisites_INTERNAL_ = py_info.transitive_sources,
+        compilation_outputs = py_info.transitive_sources,
     )
 
 def create_venv_config_info(*, label, name, imports, static_repos = None):
@@ -559,6 +597,8 @@ def _get_py_venv_toolchain(ctx, *, cfg = "target"):
 
 py_venv_common = struct(
     create_dep_info = _create_dep_info,
+    create_output_group_info = _create_output_group_info,
+    create_py_cc_link_params_info = _create_py_cc_link_params_info,
     create_py_info = _create_py_info,
     create_py_executable_info = _create_py_executable_info,
     create_runfiles_collection = _create_runfiles_collection,
