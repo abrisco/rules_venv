@@ -1,4 +1,5 @@
 load("@rules_venv//python:defs.bzl", "py_binary", "py_library", "py_test")
+load("@rules_venv//python/module_extension:defs.bzl", "py_cc_extension")
 load("@rules_venv//python/wasm:defs.bzl", "py_wasm_module")
 
 py_library(
@@ -7,9 +8,16 @@ py_library(
 )
 
 # `greeter.wasm`: CPython 3.14 and `greeter.py`, exporting `greet`.
+# An extension module in C, built for wasm32-wasi and imported by greeter.py.
+py_cc_extension(
+    name = "_shout",
+    srcs = ["shout.c"],
+)
+
 py_wasm_module(
     name = "greeter",
     entry = "greeter",
+    extensions = [":_shout"],
     python_version = "3.14",
     exports = ["greet"],
     deps = [":greeter_lib"],

@@ -5,7 +5,9 @@ Rules for building [Module Extensions](https://docs.python.org/3/extending/exten
 
 load(
     ":py_cc_extension.bzl",
+    _PyCcExtensionInfo = "PyCcExtensionInfo",
     _py_cc_extension = "py_cc_extension",
 )
 
+PyCcExtensionInfo = _PyCcExtensionInfo
 py_cc_extension = _py_cc_extension

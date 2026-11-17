@@ -27,6 +27,8 @@ extern const unsigned char rules_venv_py_wasm_bundle_end[];
 extern const char rules_venv_py_wasm_bootstrap_src[];
 /* The entry module, from the rule's `exports.c`. */
 extern const char rules_venv_py_wasm_entry_module[];
+/* Registers the extension modules of `cc_deps`; also from `exports.c`. */
+extern void rules_venv_py_wasm_register_extensions(void);
 /* What the interpreter wrote to a standard stream (wasi_stubs.c). */
 extern const char* wasi_stub_captured(int fd, size_t* len);
 
@@ -85,6 +87,7 @@ static const char* initialize(void) {
     if (g_ready) {
         return NULL;
     }
+    rules_venv_py_wasm_register_extensions();
     PyImport_AppendInittab("_host", PyInit__host);
     PyImport_FrozenModules = rules_venv_py_wasm_frozen_modules;
 

@@ -13,6 +13,17 @@ toolchain_type(
     name = "toolchain_type",
 )
 
+# What the C extensions of a `py_wasm_module` are built for: the wasi-sdk's
+# C toolchain and the `py_cc_toolchain` of the wasm32-wasi CPython are
+# registered for it; see "C extensions" in the module documentation of `defs.bzl`.
+platform(
+    name = "wasm32_wasi",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+        "@platforms//os:wasi",
+    ],
+)
+
 # Which build of CPython the default toolchains embed; see `CPYTHON_WASI` in
 # `private/versions.bzl` for the variants and the default of each version.
 # `--@rules_venv//python/wasm:cpython_variant=stock` picks CPython's own build,

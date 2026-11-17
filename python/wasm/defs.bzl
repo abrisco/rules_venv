@@ -126,6 +126,36 @@ receives what it needs in its input and describes what it wants done in its
 output, in rounds if need be. Bytes cross the boundary unchanged in both
 directions.
 
+## C extensions
+
+An extension module is a `py_cc_extension` (see `//python/module_extension`),
+the same target a `py_test` imports on the host. The `extensions` of a
+`py_wasm_module` name such targets, and the rule builds them for the
+`//python/wasm:wasm32_wasi` platform: the `py_wasm` extension registers a C
+toolchain over the wasi-sdk and a `py_cc_toolchain` whose headers and
+libraries are the wasm32-wasi CPython's for it. The module links each
+extension's library, with its dependencies, and registers its `PyInit_<module>`
+before the interpreter starts; the entry module imports it like any other.
+
+```python
+py_cc_extension(
+    name = "_shout",
+    srcs = ["shout.c"],
+)
+
+py_wasm_module(
+    name = "greeter",
+    extensions = [":_shout"],
+    ...
+)
+```
+
+An extension is compiled in its own `compilation_mode`, `opt` unless the
+target says otherwise, as the module's own code is, since an interpreting
+runtime pays for every instruction. It sees the same world the Python does:
+no files, environment or processes; what it needs comes through the Python
+that calls it.
+
 ## The CPython
 
 The CPython in a module is a release built for `wasm32-wasi` by

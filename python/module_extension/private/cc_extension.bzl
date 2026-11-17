@@ -2,9 +2,22 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_cc//cc/common:debug_package_info.bzl", "DebugPackageInfo")
 load("//python:py_info.bzl", "PyInfo")
+
+PyCcExtensionInfo = provider(
+    doc = "An extension module in C, as `py_wasm_module` links one into a WebAssembly module.",
+    fields = {
+        "cc_info": "The `CcInfo` of the extension's library and its dependencies.",
+        "module": "The name the module is imported by, whose `PyInit_<module>` the library defines.",
+    },
+)
+
+def _module_name(target_name):
+    """The module a `py_cc_extension` defines: the last component of its name, `_ext` for `src/pkg.sub._ext`."""
+    return target_name.rsplit("/", 1)[-1].rsplit(".", 1)[-1]
 
 def _compilation_mode_transition_impl(settings, attr):
     output = dict(settings)
@@ -111,13 +124,23 @@ def _extension_name(*, name, linux_cpu, linux_abi, extension, py_toolchain):
 
 def _py_cc_extension_library_impl(ctx):
     files = []
+    extension_info = PyCcExtensionInfo(
+        cc_info = ctx.attr.library[CcInfo],
+        module = _module_name(ctx.label.name),
+    )
+
+    py_toolchain = ctx.toolchains["//python:toolchain_type"]
+    if py_toolchain == None:
+        # A platform without a Python toolchain, as the one `py_wasm_module`
+        # builds its extensions for: the module links the library itself,
+        # and no shared object is wanted.
+        return [DefaultInfo(), extension_info]
 
     if ctx.attr.stripped:
         extension = ctx.attr.extension[DebugPackageInfo].stripped_file
     else:
         extension = ctx.executable.extension
 
-    py_toolchain = ctx.toolchains["//python:toolchain_type"]
     ext = ctx.actions.declare_file(_extension_name(
         linux_cpu = _linux_cpu(ctx),
         linux_abi = ctx.attr.abi,
@@ -149,6 +172,7 @@ def _py_cc_extension_library_impl(ctx):
             ctx,
             dependency_attributes = ["extension"],
         ),
+        extension_info,
     ]
 
     # Forward any aspect-generated outputs
@@ -188,6 +212,11 @@ py_cc_extension_library = rule(
         "imports": attr.string_list(
             doc = "List of import directories to be added to the `PYTHONPATH`.",
         ),
+        "library": attr.label(
+            doc = "The extension's code as a library, which `extension` links and a `py_wasm_module` links itself.",
+            providers = [CcInfo],
+            mandatory = True,
+        ),
         "stripped": attr.bool(
             doc = "Use the stripped output from `extension`.",
             default = False,
@@ -199,11 +228,14 @@ py_cc_extension_library = rule(
             default = Label("@platforms//cpu:armv7"),
         ),
     },
-    toolchains = ["//python:toolchain_type"],
+    toolchains = [
+        # Absent on the platform a `py_wasm_module` builds its extensions for.
+        config_common.toolchain_type("//python:toolchain_type", mandatory = False),
+    ],
 )
 
 _LINUX_ABI = select({
-    "@platforms//os:linux": "gnu",
+    Label("@platforms//os:linux"): "gnu",
     "//conditions:default": "",
 })
 
@@ -229,7 +261,10 @@ def py_cc_extension(
         **kwargs):
     """Define a Python C extension module.
 
-    This target is consumed just as a `py_library` would be.
+    This target is consumed just as a `py_library` would be, and by the
+    `extensions` of a `py_wasm_module`, which links the same code into its
+    WebAssembly module. The module's name is the last component of `name`:
+    `_ext` for `src/pkg.sub._ext`, and `PyInit__ext` is its entry point.
 
     Args:
         name (str): The name of the target.
@@ -269,24 +304,36 @@ def py_cc_extension(
     tags = kwargs.pop("tags", [])
     visibility = kwargs.pop("visibility", None)
 
-    cc_binary(
-        name = name + "_shared",
+    # The code, which the shared object links and a `py_wasm_module` links
+    # into its module; `alwayslink` keeps `PyInit_*` where nothing refers to it.
+    cc_library(
+        name = name + "_lib",
+        srcs = srcs,
+        alwayslink = True,
         conlyopts = conlyopts,
         copts = copts,
         cxxopts = cxxopts,
-        data = data,
         defines = defines,
-        deps = [
-            Label("@rules_python//python/cc:current_py_cc_headers"),
-            Label("@rules_python//python/cc:current_py_cc_libs"),
-        ] + deps,
-        dynamic_deps = dynamic_deps,
         includes = includes,
+        linkstatic = True,
+        local_defines = local_defines,
+        tags = depset(tags + ["manual"]).to_list(),
+        visibility = ["//visibility:private"],
+        deps = [Label("@rules_python//python/cc:current_py_cc_headers")] + deps,
+        **kwargs
+    )
+
+    cc_binary(
+        name = name + "_shared",
+        data = data,
+        deps = [
+            ":" + name + "_lib",
+            Label("@rules_python//python/cc:current_py_cc_libs"),
+        ],
+        dynamic_deps = dynamic_deps,
         linkopts = linkopts,
         linkshared = True,
-        local_defines = local_defines,
         malloc = malloc,
-        srcs = srcs,
         tags = depset(tags + ["manual"]).to_list(),
         visibility = ["//visibility:private"],
         **kwargs
@@ -295,6 +342,7 @@ def py_cc_extension(
     py_cc_extension_library(
         name = name,
         extension = name + "_shared",
+        library = name + "_lib",
         abi = abi,
         compilation_mode = compilation_mode,
         imports = imports,

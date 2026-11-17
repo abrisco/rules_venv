@@ -62,6 +62,8 @@ filegroup(
 """
 
 _WASI_SDK_BUILD = """\
+load("@rules_venv//python/wasm/private:wasi_sdk_cc_toolchain.bzl", "wasi_sdk_cc_toolchain")
+
 package(default_visibility = ["//visibility:public"])
 
 # The compiler finds its resource directory and sysroot relative to itself,
@@ -74,6 +76,12 @@ filegroup(
 filegroup(
     name = "clang",
     srcs = ["bin/clang{exe}"],
+)
+
+# The C toolchain for `wasm32-wasi`, which the extension's hub registers.
+wasi_sdk_cc_toolchain(
+    name = "cc_toolchain",
+    exe = "{exe}",
 )
 """
 
@@ -95,9 +103,10 @@ def _cpython_stdlib_repository_name(version, variant):
 
 _VARIANT_SETTING = "@rules_venv//python/wasm:cpython_variant_{}"
 
-def _cpython_select(cpython, minor, target):
+def _cpython_select(cpython, minor, target, as_list = False):
     """A `select()` over the variant flag for one target of a version's CPython archives.
 
+    With `as_list`, each branch is a list of the one label, for a list attribute.
     The flag's `default` value means the version's default variant. There is no
     `//conditions:default` branch on purpose: a variant the version does not have
     then matches nothing and `no_match_error` says which it has, where a
@@ -106,7 +115,8 @@ def _cpython_select(cpython, minor, target):
     branches = {}
     for variant in sorted(cpython.variants):
         repository = _cpython_stdlib_repository_name(minor, variant) if target == "stdlib" else _cpython_repository_name(minor, variant)
-        branches[_VARIANT_SETTING.format(variant.replace("-", "_"))] = "@{}//:{}".format(repository, target)
+        label = "@{}//:{}".format(repository, target)
+        branches[_VARIANT_SETTING.format(variant.replace("-", "_"))] = [label] if as_list else label
     branches[_VARIANT_SETTING.format("default")] = branches[_VARIANT_SETTING.format(cpython.default.replace("-", "_"))]
     return "select({}, no_match_error = {})".format(
         json.encode_indent(branches, prefix = "        ", indent = "    "),
@@ -124,9 +134,34 @@ def _exe(host):
     return ".exe" if host.startswith("windows-") else ""
 
 _HUB_HEADER = """\
-# The default `py_wasm_toolchain`s, written by the `py_wasm` extension of
-# rules_venv: one per supported Python version and host.
-load("@rules_venv//python/wasm/private:toolchain_suite.bzl", "py_wasm_toolchain_suite")
+# The default toolchains of rules_venv's `py_wasm` extension: a
+# `py_wasm_toolchain` per supported Python version and host, and for the C
+# extensions of a module, a wasi-sdk's C toolchain per host and the Python
+# version's `py_cc_toolchain`, both for the `wasm32_wasi` platform.
+load(
+    "@rules_venv//python/wasm/private:toolchain_suite.bzl",
+    "py_wasm_toolchain_suite",
+    "wasm32_wasi_cc_toolchain",
+    "wasm32_wasi_py_cc_toolchain",
+)
+"""
+
+_HUB_CC_TOOLCHAIN = """
+wasm32_wasi_cc_toolchain(
+    name = "cc_toolchain_{release}_{host}",
+    cc_toolchain = "@{wasi_sdk}//:cc_toolchain",
+    host = "{host}",
+    python_versions = {python_versions},
+)
+"""
+
+_HUB_PY_CC_TOOLCHAIN = """
+wasm32_wasi_py_cc_toolchain(
+    name = "py_cc_toolchain_{version}",
+    libs = {libs},
+    pyconfig = {pyconfig},
+    python_version = "{version}",
+)
 """
 
 _HUB_SUITE = """
@@ -196,8 +231,15 @@ def _py_wasm_impl(module_ctx):
     # left out, since its interpreter could not build the module (see
     # `supported_python_versions`).
     suites = []
+    versions_by_release = {}
     for minor in supported_python_versions(MINOR_MAPPING):
         cpython = CPYTHON_WASI[minor]
+        versions_by_release.setdefault(cpython.wasi_sdk, []).append(minor)
+        suites.append(_HUB_PY_CC_TOOLCHAIN.format(
+            version = minor,
+            libs = _cpython_select(cpython, minor, "libs", as_list = True),
+            pyconfig = _cpython_select(cpython, minor, "pyconfig.h"),
+        ))
         for host in WASI_SDK[cpython.wasi_sdk].hosts:
             if host not in SUPPORTED_HOSTS:
                 continue
@@ -210,6 +252,16 @@ def _py_wasm_impl(module_ctx):
                 pyconfig = _cpython_select(cpython, minor, "pyconfig.h"),
                 stdlib = _cpython_select(cpython, minor, "stdlib"),
                 wizer = _wizer_repository_name(host),
+            ))
+    for release, versions in versions_by_release.items():
+        for host in WASI_SDK[release].hosts:
+            if host not in SUPPORTED_HOSTS:
+                continue
+            suites.append(_HUB_CC_TOOLCHAIN.format(
+                release = release,
+                host = host,
+                wasi_sdk = _wasi_sdk_repository_name(release, host),
+                python_versions = repr(versions),
             ))
     _hub(
         name = TOOLCHAINS_REPOSITORY,

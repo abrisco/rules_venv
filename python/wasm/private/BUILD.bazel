@@ -37,6 +37,13 @@ bzl_library(
     deps = [
         ":versions_bzl",
         "//python:py_info_bzl",
+        "//python/module_extension:bzl_lib",
         "//python/wasm:py_wasm_toolchain_bzl",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:selects",
+        "@rules_cc//cc:bzl_srcs",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/toolchains:toolchain_rules",
+        "@rules_python//python/cc:py_cc_toolchain_bzl",
     ],
 )
